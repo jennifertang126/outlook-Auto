@@ -1,0 +1,25 @@
+appId: com.outlookauto.app
+productName: OutlookAuto
+directories:
+  buildResources: resources
+  output: dist
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!electron.vite.config.*'
+  - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!{tailwind.config.js,postcss.config.js}'
+asarUnpack:
+  - 'node_modules/better-sqlite3/**'
+mac:
+  icon: resources/icon.icns
+  notarize: false
+  identity: null
+  target:
+    - target: dmg
+      arch:
+        - arm64
+dmg:
+  artifactName: ${name}-${version}-${arch}.${ext}
+  title: OutlookAuto
