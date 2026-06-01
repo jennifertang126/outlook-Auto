@@ -11,8 +11,6 @@ interface SendResult {
 
 export class OutlookWebService {
   private win: BrowserWindow | null = null
-  private draftsUrl = ''
-  private userEmail = ''
 
   private getDraftsUrl(email: string): string {
     const domain = email.split('@')[1]?.toLowerCase() || ''
@@ -38,8 +36,7 @@ export class OutlookWebService {
     onProgress: (current: number, total: number) => void
   ): Promise<SendResult[]> {
     const results: SendResult[] = []
-    this.userEmail = userEmail
-    this.draftsUrl = this.getDraftsUrl(userEmail)
+    const draftsUrl = this.getDraftsUrl(userEmail)
 
     this.win = new BrowserWindow({
       width: 1100,
@@ -55,11 +52,12 @@ export class OutlookWebService {
 
     try {
       // Load drafts page ONCE
-      await this.win.loadURL(this.draftsUrl)
+      await this.win.loadURL(draftsUrl)
       await this.waitForMailUI(userEmail)
 
       // Send each draft without reloading the page
       for (let i = 0; i < subjects.length; i++) {
+        this.win.setTitle(`Outlook-Auto - Sending ${i + 1}/${subjects.length}...`)
         try {
           await this.sendOneDraft(subjects[i])
           results.push({ index: i, subject: subjects[i], success: true })
@@ -69,6 +67,7 @@ export class OutlookWebService {
         onProgress(i + 1, subjects.length)
       }
 
+      this.win.setTitle(`Outlook-Auto - Done! ${results.filter(r => r.success).length}/${subjects.length} sent`)
       await this.sleep(2000)
     } finally {
       if (this.win && !this.win.isDestroyed()) {
@@ -101,6 +100,7 @@ export class OutlookWebService {
 
       const ready = await this.execJS(this.mailReadyCheck())
       if (ready) {
+        this.win.setTitle('Outlook-Auto - Sending Drafts...')
         await this.sleep(2000)
         return
       }
@@ -137,19 +137,13 @@ export class OutlookWebService {
     `)
 
     // Wait for the draft list to appear
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
       await this.sleep(500)
       const ready = await this.execJS(this.mailReadyCheck())
       if (ready) {
         await this.sleep(1000)
         return
       }
-    }
-
-    // Fallback to full page reload if SPA navigation failed
-    if (this.win && !this.win.isDestroyed()) {
-      await this.win.loadURL(this.draftsUrl)
-      await this.waitForMailUI(this.userEmail)
     }
   }
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.2.1 (2026-06-01)
+
+### Bug Fixes
+- Fixed Outlook Web window reopening for each email — now opens once, sends all drafts, then closes
+- Fixed extra blank window appearing after all emails are sent
+- Fixed second email failing due to drafts folder navigation not completing properly
+- Improved sidebar "Drafts" folder click reliability with better selector matching
+
+### Improvements
+- Window title shows real-time progress: "Sending 1/5...", "Sending 2/5...", "Done! 5/5 sent"
+
 ## v1.2.0 (2026-06-01)
 
 ### Bug Fixes
