@@ -225,5 +225,10 @@ export class AuthService {
     this.tokenData = null
     this.loaded = false
     getDb().prepare("UPDATE auth_state SET token_cache = NULL, updated_at = datetime('now') WHERE id = 1").run()
+
+    // Clear all browser session data so the next login/send uses fresh cookies
+    const { session } = await import('electron')
+    await session.defaultSession.clearStorageData()
+    await session.defaultSession.clearCache()
   }
 }

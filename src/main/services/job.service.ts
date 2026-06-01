@@ -235,11 +235,10 @@ export class JobService {
         this.emitProgress(jobId, current, total, 'sending')
       })
 
-      // Update each record by matching subject text
+      // Update each record by index — no ambiguity
       let failCount = 0
       for (const result of results) {
-        const record = records.find((r) => r.rendered_subject === result.subject)
-        if (!record) continue
+        const record = records[result.index]
         if (result.success) {
           getDb()
             .prepare("UPDATE send_record SET status = 'sent', sent_at = datetime('now') WHERE id = ?")

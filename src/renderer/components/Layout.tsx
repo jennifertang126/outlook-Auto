@@ -37,9 +37,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="w-60 border-r bg-muted/30 flex flex-col">
         {/* Title bar drag area — leave space for macOS traffic lights */}
-        <div className="titlebar-drag h-14 flex items-end pl-5 pr-5 pb-2">
+        <div className="titlebar-drag h-14 flex items-end pl-20 pr-5 pb-2">
           <h1 className="text-base font-semibold text-foreground titlebar-no-drag">
-            OutlookAuto
+            Outlook-Auto
           </h1>
         </div>
 

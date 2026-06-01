@@ -48,7 +48,7 @@ export function LoginPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-5">
             <Mail className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">OutlookAuto</h1>
+          <h1 className="text-2xl font-bold text-foreground">Outlook-Auto</h1>
           <p className="text-muted-foreground mt-2">Batch email automation for Outlook</p>
         </div>
 

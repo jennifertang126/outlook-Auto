@@ -1,6 +1,7 @@
 import { BrowserWindow } from 'electron'
 
 interface SendResult {
+  index: number
   subject: string
   success: boolean
   error?: string
@@ -24,21 +25,6 @@ export class OutlookWebService {
     onProgress: (current: number, total: number) => void
   ): Promise<SendResult[]> {
     const results: SendResult[] = []
-
-    for (let i = 0; i < subjects.length; i++) {
-      try {
-        await this.sendDraftInNewWindow(subjects[i])
-        results.push({ subject: subjects[i], success: true })
-      } catch (err: any) {
-        results.push({ subject: subjects[i], success: false, error: err.message })
-      }
-      onProgress(i + 1, subjects.length)
-    }
-
-    return results
-  }
-
-  private async sendDraftInNewWindow(subject: string): Promise<void> {
     const draftsUrl = 'https://outlook.office.com/mail/drafts'
 
     this.win = new BrowserWindow({
@@ -46,7 +32,7 @@ export class OutlookWebService {
       height: 750,
       show: true,
       center: true,
-      title: 'OutlookAuto - Loading...',
+      title: 'Outlook-Auto - Loading...',
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true
@@ -54,15 +40,30 @@ export class OutlookWebService {
     })
 
     try {
+      // Load drafts page ONCE
       await this.win.loadURL(draftsUrl)
       await this.waitForMailUI()
-      await this.sendOneDraft(subject)
+
+      // Send each draft without reloading the page
+      for (let i = 0; i < subjects.length; i++) {
+        try {
+          await this.sendOneDraft(subjects[i])
+          results.push({ index: i, subject: subjects[i], success: true })
+        } catch (err: any) {
+          results.push({ index: i, subject: subjects[i], success: false, error: err.message })
+        }
+        onProgress(i + 1, subjects.length)
+      }
+
+      await this.sleep(2000)
     } finally {
       if (this.win && !this.win.isDestroyed()) {
         this.win.close()
       }
       this.win = null
     }
+
+    return results
   }
 
   private async waitForMailUI(): Promise<void> {
@@ -81,6 +82,44 @@ export class OutlookWebService {
     }
 
     throw new Error('Outlook Web did not load within 1 minute.')
+  }
+
+  // Navigate back to drafts by clicking the sidebar link (no page reload)
+  private async goBackToDrafts(): Promise<void> {
+    // Click the drafts folder in sidebar
+    await this.execJS(`
+      (function() {
+        // Strategy 1: find <a> with href containing 'draft'
+        var anchors = document.querySelectorAll('a[href*="draft" i]');
+        for (var i = 0; i < anchors.length; i++) {
+          var href = anchors[i].getAttribute('href') || '';
+          // Make sure it's a mail folder link, not some random link
+          if (href.includes('/mail') || href.includes('/drafts')) {
+            anchors[i].click();
+            return;
+          }
+        }
+        // Strategy 2: find sidebar treeitem
+        var items = document.querySelectorAll('[role="treeitem"]');
+        var names = ['Drafts', '草稿', '草稿箱', 'Brouillons', 'Entwürfe', 'Borradores'];
+        for (var j = 0; j < items.length; j++) {
+          var t = (items[j].textContent || '').replace(/[0-9]/g, '').trim();
+          for (var k = 0; k < names.length; k++) {
+            if (t === names[k]) { items[j].click(); return; }
+          }
+        }
+      })()
+    `)
+
+    // Wait for the draft list to appear
+    for (let i = 0; i < 20; i++) {
+      await this.sleep(500)
+      const ready = await this.execJS(this.mailReadyCheck())
+      if (ready) {
+        await this.sleep(1000)
+        return
+      }
+    }
   }
 
   private async sendOneDraft(subject: string): Promise<void> {
@@ -106,6 +145,13 @@ export class OutlookWebService {
             if (c.nodeType === 3) directText += c.textContent;
           }
           directText = directText.trim();
+
+          if (directText === target) {
+            var clickable = el.closest('[role="option"], [role="listitem"], [role="treeitem"], [data-convid], [tabindex]');
+            if (clickable) { clickable.click(); return 'exact'; }
+            el.click();
+            return 'exact-direct';
+          }
 
           if (directText.includes(target) && directText.length < bestLen) {
             bestMatch = el;
@@ -169,8 +215,9 @@ export class OutlookWebService {
       throw new Error('Send button did not appear after 20 seconds')
     }
 
-    // Step 3: Wait for send to finish before closing the window
+    // Step 3: Wait for send to finish, then go back to drafts for next one
     await this.sleep(2000)
+    await this.goBackToDrafts()
   }
 
   private async execJS(code: string): Promise<any> {
