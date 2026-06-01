@@ -230,8 +230,9 @@ export class JobService {
         .all(jobId) as RecordRow[]
 
       const subjects = records.map((r) => r.rendered_subject)
+      const userEmail = getAuthService().getUserEmail()
 
-      const results = await outlookWebService.sendAllDrafts(subjects, (current, total) => {
+      const results = await outlookWebService.sendAllDrafts(subjects, userEmail, (current, total) => {
         this.emitProgress(jobId, current, total, 'sending')
       })
 
@@ -273,8 +274,10 @@ export class JobService {
     if (!record) throw new Error('Record not found')
     if (record.status !== 'draft_created') throw new Error('Record is not a draft')
 
+    const userEmail = getAuthService().getUserEmail()
     const results = await outlookWebService.sendAllDrafts(
       [record.rendered_subject],
+      userEmail,
       () => {}
     )
 

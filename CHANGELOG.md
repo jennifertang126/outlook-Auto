@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.2.0 (2026-06-01)
+
+### Bug Fixes
+- Fixed enterprise/work Outlook accounts: auto-detect account type and use `outlook.office.com` for enterprise or `outlook.live.com` for personal accounts
+- Fixed send failure after switching accounts: Outlook Web window now waits for user to complete login if session expired
+- Fixed window closing prematurely when Outlook Web redirects to login page
+
+### Improvements
+- Outlook Web send window title shows which account to sign in with when login is required
+- Increased login wait timeout to 3 minutes for slow connections
+- Fallback to full page reload only when SPA draft folder navigation fails
+
 ## v1.1.0 (2026-06-01)
 
 ### Bug Fixes

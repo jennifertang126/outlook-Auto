@@ -1,5 +1,7 @@
 import { BrowserWindow } from 'electron'
 
+const PERSONAL_DOMAINS = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com']
+
 interface SendResult {
   index: number
   subject: string
@@ -9,6 +11,16 @@ interface SendResult {
 
 export class OutlookWebService {
   private win: BrowserWindow | null = null
+  private draftsUrl = ''
+  private userEmail = ''
+
+  private getDraftsUrl(email: string): string {
+    const domain = email.split('@')[1]?.toLowerCase() || ''
+    if (PERSONAL_DOMAINS.includes(domain)) {
+      return 'https://outlook.live.com/mail/0/drafts'
+    }
+    return 'https://outlook.office.com/mail/drafts'
+  }
 
   private mailReadyCheck(): string {
     return `
@@ -22,10 +34,12 @@ export class OutlookWebService {
 
   async sendAllDrafts(
     subjects: string[],
+    userEmail: string,
     onProgress: (current: number, total: number) => void
   ): Promise<SendResult[]> {
     const results: SendResult[] = []
-    const draftsUrl = 'https://outlook.office.com/mail/drafts'
+    this.userEmail = userEmail
+    this.draftsUrl = this.getDraftsUrl(userEmail)
 
     this.win = new BrowserWindow({
       width: 1100,
@@ -41,8 +55,8 @@ export class OutlookWebService {
 
     try {
       // Load drafts page ONCE
-      await this.win.loadURL(draftsUrl)
-      await this.waitForMailUI()
+      await this.win.loadURL(this.draftsUrl)
+      await this.waitForMailUI(userEmail)
 
       // Send each draft without reloading the page
       for (let i = 0; i < subjects.length; i++) {
@@ -66,13 +80,24 @@ export class OutlookWebService {
     return results
   }
 
-  private async waitForMailUI(): Promise<void> {
+  private async waitForMailUI(userEmail: string): Promise<void> {
     if (!this.win) throw new Error('No window')
 
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 180; i++) {
       await this.sleep(1000)
 
       if (this.win.isDestroyed()) throw new Error('Window closed')
+
+      const currentUrl = this.win.webContents.getURL()
+      const isLoginPage =
+        currentUrl.includes('login.microsoftonline.com') ||
+        currentUrl.includes('login.live.com') ||
+        currentUrl.includes('login.microsoft.com')
+
+      if (isLoginPage) {
+        this.win.setTitle(`Outlook-Auto - Please sign in with ${userEmail}`)
+        continue
+      }
 
       const ready = await this.execJS(this.mailReadyCheck())
       if (ready) {
@@ -81,7 +106,7 @@ export class OutlookWebService {
       }
     }
 
-    throw new Error('Outlook Web did not load within 1 minute.')
+    throw new Error('Outlook Web did not load within 3 minutes.')
   }
 
   // Navigate back to drafts by clicking the sidebar link (no page reload)
@@ -112,13 +137,19 @@ export class OutlookWebService {
     `)
 
     // Wait for the draft list to appear
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 10; i++) {
       await this.sleep(500)
       const ready = await this.execJS(this.mailReadyCheck())
       if (ready) {
         await this.sleep(1000)
         return
       }
+    }
+
+    // Fallback to full page reload if SPA navigation failed
+    if (this.win && !this.win.isDestroyed()) {
+      await this.win.loadURL(this.draftsUrl)
+      await this.waitForMailUI(this.userEmail)
     }
   }
 
