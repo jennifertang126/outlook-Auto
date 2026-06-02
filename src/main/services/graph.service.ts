@@ -36,7 +36,7 @@ export class GraphService {
   private async buildRawEmail(options: EmailOptions): Promise<Buffer> {
     const mail = new MailComposer({
       from: this.userEmail,
-      to: options.toRecipients.map((r) => `"${r.name}" <${r.email}>`),
+      to: options.toRecipients.map((r) => r.email),
       subject: options.subject,
       ...(options.bodyType === 'HTML' ? { html: options.body } : { text: options.body }),
       attachments: this.buildAttachments(options.attachmentPaths)
@@ -76,7 +76,7 @@ export class GraphService {
 
     const result = await transport.sendMail({
       from: this.userEmail,
-      to: options.toRecipients.map((r) => `"${r.name}" <${r.email}>`),
+      to: options.toRecipients.map((r) => r.email),
       subject: options.subject,
       ...(options.bodyType === 'HTML' ? { html: options.body } : { text: options.body }),
       attachments: this.buildAttachments(options.attachmentPaths)

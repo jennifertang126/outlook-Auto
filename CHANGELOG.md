@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.2 (2026-06-02)
+
+### Bug Fixes
+- Fixed draft recipient field showing `"Name" <email>` format — now shows pure email address only, easier to verify in Outlook drafts folder
+
 ## v1.2.1 (2026-06-01)
 
 ### Bug Fixes
