@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.3.2 (2026-06-18)
+
+### Bug Fixes
+- Fixed template editor showing empty body when re-opening an existing template for editing
+
 ## v1.3.1 (2026-06-18)
 
 ### Bug Fixes

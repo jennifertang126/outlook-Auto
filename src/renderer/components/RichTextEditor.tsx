@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useLayoutEffect } from 'react'
 import { Bold, Italic, Underline } from 'lucide-react'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
@@ -19,17 +19,28 @@ export function RichTextEditor({
   minHeight = '200px'
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
+  const valueRef = useRef(value)
 
-  // Set initial content on mount
-  useEffect(() => {
+  // Set initial content on mount (before browser paints)
+  useLayoutEffect(() => {
     if (editorRef.current) {
       editorRef.current.innerHTML = value
+      valueRef.current = value
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Sync external value changes
+  useEffect(() => {
+    if (editorRef.current && value !== valueRef.current) {
+      editorRef.current.innerHTML = value
+      valueRef.current = value
+    }
+  }, [value])
 
   const handleInput = useCallback(() => {
     if (!editorRef.current) return
     const html = editorRef.current.innerHTML
+    valueRef.current = html
     onChange(html)
   }, [onChange])
 
