@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.3.1 (2026-06-18)
+
+### Bug Fixes
+- Fixed template editor dialog overflow: body area now scrolls independently, buttons always visible
+- Moved signature to Templates page as a one-time setup card with clear instructions
+
+### Notes
+- Email signature is a one-time setup: copy from Outlook Web → Settings → Mail → Compose → Email signature, paste once, saved permanently
+
 ## v1.3.0 (2026-06-18)
 
 ### Features

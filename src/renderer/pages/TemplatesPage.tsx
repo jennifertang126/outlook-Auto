@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Copy, FileText } from 'lucide-react'
+import { Plus, Pencil, Trash2, Copy, FileText, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -30,6 +30,10 @@ export function TemplatesPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form, setForm] = useState<CreateTemplate>(emptyTemplate)
 
+  // Signature
+  const [signature, setSignature] = useState('')
+  const [showSignature, setShowSignature] = useState(false)
+
   const loadTemplates = async () => {
     const list = await api.templates.list()
     setTemplates(list)
@@ -37,7 +41,15 @@ export function TemplatesPage() {
 
   useEffect(() => {
     loadTemplates()
+    api.settings.get('email_signature').then((s) => {
+      if (s) setSignature(s)
+    })
   }, [])
+
+  const handleSaveSignature = async () => {
+    await api.settings.set('email_signature', signature)
+    toast({ title: 'Signature saved' })
+  }
 
   const openCreate = () => {
     setEditingId(null)
@@ -172,10 +184,43 @@ export function TemplatesPage() {
         </div>
       )}
 
+      {/* Signature - one-time setup */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3 cursor-pointer" onClick={() => setShowSignature(!showSignature)}>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Email Signature</CardTitle>
+              <CardDescription>
+                Set once, auto-appended to every email draft. Copy your signature from Outlook.
+              </CardDescription>
+            </div>
+            {showSignature ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </CardHeader>
+        {showSignature && (
+          <CardContent className="space-y-3">
+            <RichTextEditor
+              value={signature}
+              onChange={setSignature}
+              placeholder="Paste your email signature here (e.g., company name, title, contact info)..."
+              minHeight="100px"
+            />
+            <div className="flex justify-between items-center">
+              <p className="text-xs text-muted-foreground">
+                Tip: Copy your signature from Outlook Web → Settings → Mail → Compose and reply → Email signature.
+              </p>
+              <Button variant="outline" size="sm" onClick={handleSaveSignature}>
+                Save Signature
+              </Button>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader className="shrink-0">
             <DialogTitle>{editingId ? 'Edit Template' : 'New Template'}</DialogTitle>
             <DialogDescription>
               Use <code className="bg-muted px-1 rounded">{'{{column_name}}'}</code> as
@@ -183,7 +228,7 @@ export function TemplatesPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 min-h-0">
             <div className="space-y-2">
               <Label>Template Name</Label>
               <Input
@@ -204,6 +249,7 @@ export function TemplatesPage() {
             <div className="space-y-2">
               <Label>Body Template</Label>
               <RichTextEditor
+                key={editingId ? `edit-${editingId}` : 'new'}
                 value={form.body_template}
                 onChange={(html) => {
                   const hasFormatting = /<\/?(b|strong|i|em|u|span\s)/i.test(html)
@@ -222,7 +268,7 @@ export function TemplatesPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
