@@ -20,6 +20,7 @@ import { Label } from '../components/ui/label'
 import { Separator } from '../components/ui/separator'
 import { api } from '../lib/electron-api'
 import { useToast } from '../components/ui/use-toast'
+import { RichTextEditor } from '../components/RichTextEditor'
 import type { Template, ParsedExcel } from '../lib/types'
 
 const STEPS = [
@@ -55,9 +56,18 @@ export function ComposePage() {
   // Step 5: Submit
   const [submitting, setSubmitting] = useState(false)
 
+  // Signature
+  const [signature, setSignature] = useState('')
+
   useEffect(() => {
     api.templates.list().then(setTemplates)
+    api.settings.get('email_signature').then((s) => setSignature(s || ''))
   }, [])
+
+  const handleSaveSignature = async () => {
+    await api.settings.set('email_signature', signature)
+    toast({ title: 'Signature saved' })
+  }
 
   // Auto-preview when navigating to preview step
   useEffect(() => {
@@ -407,6 +417,7 @@ export function ComposePage() {
 
         {/* Step 4: Attachments */}
         {step === 3 && (
+          <>
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Attachments (Optional)</CardTitle>
@@ -450,6 +461,30 @@ export function ComposePage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Signature */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Email Signature (Optional)</CardTitle>
+              <CardDescription>
+                Auto-appended to every email in this batch
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RichTextEditor
+                value={signature}
+                onChange={setSignature}
+                placeholder="Paste your email signature here (e.g., company name, title, contact info)..."
+                minHeight="100px"
+              />
+              <div className="flex justify-end mt-3">
+                <Button variant="outline" size="sm" onClick={handleSaveSignature}>
+                  Save Signature
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          </>
         )}
 
         {/* Step 5: Confirm */}

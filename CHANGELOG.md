@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.0 (2026-06-18)
+
+### Features
+- **Rich text formatting**: template editor now supports bold, italic, underline via toolbar or ⌘B/⌘I/⌘U shortcuts
+- **Email signature**: add a signature in the Compose step that auto-appends to every email; supports HTML formatting
+- Templates auto-detect format: plain text stays as text, formatted ones save as HTML
+
 ## v1.2.2 (2026-06-02)
 
 ### Bug Fixes

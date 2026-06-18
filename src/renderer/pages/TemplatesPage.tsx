@@ -3,7 +3,7 @@ import { Plus, Pencil, Trash2, Copy, FileText } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { Textarea } from '../components/ui/textarea'
+import { RichTextEditor } from '../components/RichTextEditor'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
 import {
   Dialog,
@@ -156,9 +156,16 @@ export function TemplatesPage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-0">
-                <pre className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 whitespace-pre-wrap max-h-32 overflow-hidden">
-                  {template.body_template}
-                </pre>
+                {template.body_format === 'html' ? (
+                  <div
+                    className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 max-h-32 overflow-hidden"
+                    dangerouslySetInnerHTML={{ __html: template.body_template }}
+                  />
+                ) : (
+                  <pre className="text-xs text-muted-foreground bg-muted/50 rounded-md p-3 whitespace-pre-wrap max-h-32 overflow-hidden">
+                    {template.body_template}
+                  </pre>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -196,14 +203,21 @@ export function TemplatesPage() {
             </div>
             <div className="space-y-2">
               <Label>Body Template</Label>
-              <Textarea
-                placeholder="e.g., Hi {{name}}, ..."
+              <RichTextEditor
                 value={form.body_template}
-                onChange={(e) => setForm({ ...form, body_template: e.target.value })}
-                rows={8}
+                onChange={(html) => {
+                  const hasFormatting = /<\/?(b|strong|i|em|u|span\s)/i.test(html)
+                  setForm({
+                    ...form,
+                    body_template: html,
+                    body_format: hasFormatting ? 'html' : 'text'
+                  })
+                }}
+                placeholder="e.g., Hi {{name}},{{month}}..."
+                minHeight="180px"
               />
               <p className="text-xs text-muted-foreground">
-                Use <code className="bg-muted px-1 rounded">{'{{column_name}}'}</code> for placeholders.
+                Use <code className="bg-muted px-1 rounded">{'{{column_name}}'}</code> for placeholders. Select text and use the toolbar or ⌘B/⌘I/⌘U to format.
               </p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { getAuthService } from '../ipc-handlers'
 import { GraphService } from './graph.service'
 import { OutlookWebService } from './outlook-web.service'
 import { TemplateService } from './template.service'
+import { DbService } from './db.service'
 import { basename } from 'path'
 import { statSync } from 'fs'
 import { lookup } from 'mime-types'
@@ -36,6 +37,7 @@ interface RecordRow {
 
 const graphService = new GraphService()
 const outlookWebService = new OutlookWebService()
+const dbService = new DbService()
 const templateService = new TemplateService()
 
 export class JobService {
@@ -110,13 +112,23 @@ export class JobService {
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`
     )
 
+    const signature = dbService.getSetting('email_signature') || ''
+
     const insertMany = db.transaction((recipients: Record<string, string>[]) => {
       for (const recipient of recipients) {
         const renderedSubject = templateService.renderTemplate(
           template.subject_template,
           recipient
         )
-        const renderedBody = templateService.renderTemplate(template.body_template, recipient)
+        let renderedBody = templateService.renderTemplate(template.body_template, recipient)
+        // Append signature if set
+        if (signature) {
+          if (template.body_format === 'html') {
+            renderedBody = renderedBody + '<br><br>' + signature
+          } else {
+            renderedBody = renderedBody + '\n\n' + signature.replace(/<br\s*\/?>/gi, '\n')
+          }
+        }
         const emailKey =
           Object.keys(recipient).find((k) => k.toLowerCase() === 'email') || 'email'
         const nameKey =
@@ -149,12 +161,12 @@ export class JobService {
     }
 
     // Save drafts to Outlook via IMAP in background
-    this.createDraftsInBackground(jobId)
+    this.createDraftsInBackground(jobId, template.body_format)
 
     return this.getDetail(jobId)
   }
 
-  private async createDraftsInBackground(jobId: number): Promise<void> {
+  private async createDraftsInBackground(jobId: number, bodyFormat: 'text' | 'html'): Promise<void> {
     try {
       await this.prepareGraphService()
 
@@ -165,7 +177,7 @@ export class JobService {
       const attachmentPaths = this.getAttachmentPaths(jobId)
 
       for (let i = 0; i < records.length; i++) {
-        await this.createSingleDraft(records[i], attachmentPaths)
+        await this.createSingleDraft(records[i], attachmentPaths, bodyFormat)
         this.emitProgress(jobId, i + 1, records.length, 'creating_drafts')
 
         if (i < records.length - 1) {
@@ -189,13 +201,21 @@ export class JobService {
   private async createSingleDraft(
     record: RecordRow,
     attachmentPaths: string[],
+    bodyFormat: 'text' | 'html',
     retries = 0
   ): Promise<void> {
     try {
+      const bodyType = bodyFormat === 'html' ? 'HTML' : 'Text'
+      // For HTML bodies, wrap in basic HTML structure if not already wrapped
+      let body = record.rendered_body
+      if (bodyType === 'HTML' && !body.includes('<html') && !body.includes('<body')) {
+        body = `<html><body>${body}</body></html>`
+      }
+
       const result = await graphService.saveDraft({
         subject: record.rendered_subject,
-        body: record.rendered_body,
-        bodyType: 'Text',
+        body,
+        bodyType,
         toRecipients: [{ email: record.recipient_email, name: record.recipient_name }],
         attachmentPaths
       })
