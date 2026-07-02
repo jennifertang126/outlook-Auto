@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.4.0 (2026-07-02)
+
+### Features
+- **Email deduplication**: After uploading Excel, automatically checks "Sent Items" folder via IMAP to find previously emailed recipients
+- Duplicates are marked with "Sent before" badge and auto-excluded (unchecked)
+- New recipients show "New" badge
+- Checkbox per recipient to manually include/exclude anyone
+- Select-all checkbox in header
+- Confirm step shows active recipient count with excluded count
+- Supports both personal and enterprise Outlook accounts (auto-detects "Sent Items" folder via IMAP SPECIAL-USE)
+
 ## v1.3.2 (2026-06-18)
 
 ### Bug Fixes

@@ -39,6 +39,11 @@ export function ComposePage() {
   const [excelPath, setExcelPath] = useState<string | null>(null)
   const [excelData, setExcelData] = useState<ParsedExcel | null>(null)
 
+  // Dedup
+  const [sentEmails, setSentEmails] = useState<Set<string>>(new Set())
+  const [excludedIndices, setExcludedIndices] = useState<Set<number>>(new Set())
+  const [checkingDedup, setCheckingDedup] = useState(false)
+
   // Step 2: Template
   const [templates, setTemplates] = useState<Template[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null)
@@ -77,6 +82,40 @@ export function ComposePage() {
       setExcelPath(path)
       setExcelData(data)
       toast({ title: `Loaded ${data.rowCount} recipients from Excel` })
+
+      // Auto-check for previously sent emails
+      setCheckingDedup(true)
+      try {
+        const emailKey = data.columns.find((c) => c.toLowerCase() === 'email') || 'email'
+        const emails = data.rows.map((r) => r[emailKey]).filter(Boolean)
+        const alreadySent = await api.recipients.checkSent(emails)
+        const sentSet = new Set(alreadySent.map((e) => e.toLowerCase()))
+        setSentEmails(sentSet)
+
+        // Auto-exclude duplicates
+        const excluded = new Set<number>()
+        data.rows.forEach((row, i) => {
+          if (sentSet.has((row[emailKey] || '').toLowerCase())) {
+            excluded.add(i)
+          }
+        })
+        setExcludedIndices(excluded)
+
+        if (excluded.size > 0) {
+          toast({
+            title: `${excluded.size} duplicate(s) found`,
+            description: `${excluded.size} recipients were already emailed and will be skipped. You can re-enable them below.`
+          })
+        }
+      } catch (err: any) {
+        toast({
+          title: 'Dedup check failed',
+          description: 'Could not check sent emails. All recipients will be included.',
+          variant: 'destructive'
+        })
+      } finally {
+        setCheckingDedup(false)
+      }
     } catch (err: any) {
       toast({ title: 'Failed to parse Excel', description: err.message, variant: 'destructive' })
     }
@@ -107,10 +146,19 @@ export function ComposePage() {
     }
   }
 
+  const getActiveRecipients = () => {
+    if (!excelData) return []
+    return excelData.rows.filter((_, i) => !excludedIndices.has(i))
+  }
+
   const handleSubmit = async () => {
     if (!selectedTemplateId || !excelData || !excelPath) return
 
-    const recipients = excelData.rows
+    const recipients = getActiveRecipients()
+    if (recipients.length === 0) {
+      toast({ title: 'No recipients', description: 'All recipients are excluded', variant: 'destructive' })
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -213,12 +261,24 @@ export function ComposePage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {excelData.rowCount} recipients, {excelData.columns.length} columns
+                        {excludedIndices.size > 0 && (
+                          <span className="text-yellow-600 ml-2">
+                            ({excludedIndices.size} duplicates excluded, {excelData.rowCount - excludedIndices.size} will be sent)
+                          </span>
+                        )}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleUpload}>
                       Replace
                     </Button>
                   </div>
+
+                  {checkingDedup && (
+                    <div className="flex items-center gap-2 mb-3 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Checking for previously sent emails...
+                    </div>
+                  )}
 
                   <div className="flex gap-2 mb-3">
                     {excelData.columns.map((col) => (
@@ -232,6 +292,20 @@ export function ComposePage() {
                     <table className="w-full text-sm">
                       <thead className="bg-muted/50">
                         <tr>
+                          <th className="px-3 py-2 text-center font-medium text-muted-foreground w-10">
+                            <input
+                              type="checkbox"
+                              className="rounded"
+                              checked={excludedIndices.size === 0}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setExcludedIndices(new Set())
+                                } else {
+                                  setExcludedIndices(new Set(excelData.rows.map((_, i) => i)))
+                                }
+                              }}
+                            />
+                          </th>
                           <th className="px-3 py-2 text-left font-medium text-muted-foreground w-10">
                             #
                           </th>
@@ -243,19 +317,57 @@ export function ComposePage() {
                               {col}
                             </th>
                           ))}
+                          <th className="px-3 py-2 text-left font-medium text-muted-foreground w-20">
+                            Status
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {excelData.rows.map((row, i) => (
-                          <tr key={i} className="border-t">
-                            <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                            {excelData.columns.map((col) => (
-                              <td key={col} className="px-3 py-2 truncate max-w-[200px]">
-                                {row[col]}
+                        {excelData.rows.map((row, i) => {
+                          const emailKey = excelData.columns.find((c) => c.toLowerCase() === 'email') || 'email'
+                          const isSent = sentEmails.has((row[emailKey] || '').toLowerCase())
+                          const isExcluded = excludedIndices.has(i)
+
+                          return (
+                            <tr
+                              key={i}
+                              className={`border-t ${isExcluded ? 'opacity-50 bg-muted/20' : ''}`}
+                            >
+                              <td className="px-3 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  className="rounded"
+                                  checked={!isExcluded}
+                                  onChange={() => {
+                                    setExcludedIndices((prev) => {
+                                      const next = new Set(prev)
+                                      if (next.has(i)) next.delete(i)
+                                      else next.add(i)
+                                      return next
+                                    })
+                                  }}
+                                />
                               </td>
-                            ))}
-                          </tr>
-                        ))}
+                              <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
+                              {excelData.columns.map((col) => (
+                                <td key={col} className="px-3 py-2 truncate max-w-[200px]">
+                                  {row[col]}
+                                </td>
+                              ))}
+                              <td className="px-3 py-2">
+                                {isSent ? (
+                                  <Badge variant="secondary" className="text-xs text-yellow-700 bg-yellow-50">
+                                    Sent before
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="text-xs text-green-700 bg-green-50">
+                                    New
+                                  </Badge>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -470,7 +582,14 @@ export function ComposePage() {
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Recipients</span>
-                  <span className="font-medium">{excelData?.rowCount}</span>
+                  <span className="font-medium">
+                    {getActiveRecipients().length}
+                    {excludedIndices.size > 0 && (
+                      <span className="text-muted-foreground font-normal ml-1">
+                        ({excludedIndices.size} excluded)
+                      </span>
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between py-2 border-b">
                   <span className="text-muted-foreground">Attachments</span>
@@ -488,7 +607,7 @@ export function ComposePage() {
                 className="w-full mt-6"
                 size="lg"
                 onClick={handleSubmit}
-                disabled={submitting}
+                disabled={submitting || getActiveRecipients().length === 0}
               >
                 {submitting ? (
                   <>
@@ -498,7 +617,7 @@ export function ComposePage() {
                 ) : (
                   <>
                     <Send className="mr-2 h-4 w-4" />
-                    Create {excelData?.rowCount} Drafts
+                    Create {getActiveRecipients().length} Drafts
                   </>
                 )}
               </Button>

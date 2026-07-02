@@ -16,7 +16,8 @@ const electronAPI = {
   },
   recipients: {
     openFileDialog: () => ipcRenderer.invoke('recipients:openFileDialog'),
-    parseExcel: (filePath: string) => ipcRenderer.invoke('recipients:parseExcel', filePath)
+    parseExcel: (filePath: string) => ipcRenderer.invoke('recipients:parseExcel', filePath),
+    checkSent: (emails: string[]) => ipcRenderer.invoke('recipients:checkSent', emails)
   },
   jobs: {
     create: (data: any) => ipcRenderer.invoke('jobs:create', data),

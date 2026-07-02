@@ -27,6 +27,7 @@ interface ElectronAPI {
   recipients: {
     openFileDialog(): Promise<string | null>
     parseExcel(filePath: string): Promise<ParsedExcel>
+    checkSent(emails: string[]): Promise<string[]>
   }
   jobs: {
     create(data: CreateJob): Promise<Job>

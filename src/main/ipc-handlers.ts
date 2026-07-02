@@ -4,12 +4,14 @@ import { TemplateService } from './services/template.service'
 import { ExcelService } from './services/excel.service'
 import { JobService } from './services/job.service'
 import { DbService } from './services/db.service'
+import { GraphService } from './services/graph.service'
 
 const authService = new AuthService()
 const templateService = new TemplateService()
 const excelService = new ExcelService()
 const jobService = new JobService()
 const dbService = new DbService()
+const graphService = new GraphService()
 
 export function registerIpcHandlers(): void {
   // Auth
@@ -40,6 +42,15 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('recipients:parseExcel', (_e, filePath: string) =>
     excelService.parseExcel(filePath)
   )
+
+  // Dedup — check which emails have been sent before
+  ipcMain.handle('recipients:checkSent', async (_e, emails: string[]) => {
+    const accessToken = await authService.getAccessToken()
+    const userEmail = authService.getUserEmail()
+    graphService.setAccessToken(accessToken)
+    graphService.setUserEmail(userEmail)
+    return graphService.checkSentEmails(emails)
+  })
 
   // Jobs
   ipcMain.handle('jobs:create', (_e, data) => jobService.create(data))

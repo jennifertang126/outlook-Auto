@@ -62,6 +62,49 @@ export class GraphService {
     }
   }
 
+  async checkSentEmails(emails: string[]): Promise<string[]> {
+    const client = new ImapFlow({
+      host: 'outlook.office365.com',
+      port: 993,
+      secure: true,
+      auth: { user: this.userEmail, accessToken: this.accessToken },
+      logger: false
+    })
+
+    const found = new Set<string>()
+
+    try {
+      await client.connect()
+
+      // Outlook uses "Sent Items" (English) or localized names
+      // Try common folder names; IMAP SPECIAL-USE \Sent is the reliable way
+      let sentFolder = 'Sent Items'
+      const folders = await client.list()
+      for (const folder of folders) {
+        if (folder.specialUse === '\\Sent') {
+          sentFolder = folder.path
+          break
+        }
+      }
+
+      const lock = await client.getMailboxLock(sentFolder)
+      try {
+        for (const email of emails) {
+          const searchResults = await client.search({ to: email })
+          if (searchResults.length > 0) {
+            found.add(email.toLowerCase())
+          }
+        }
+      } finally {
+        lock.release()
+      }
+    } finally {
+      await client.logout().catch(() => {})
+    }
+
+    return Array.from(found)
+  }
+
   async sendEmail(options: EmailOptions): Promise<{ messageId: string }> {
     const transport = createTransport({
       host: 'smtp-mail.outlook.com',
