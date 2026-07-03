@@ -16,6 +16,8 @@ interface ElectronAPI {
     getStatus(): Promise<AuthStatus>
     login(): Promise<void>
     logout(): Promise<void>
+    refreshToken(): Promise<{ success: boolean; email?: string; error?: string }>
+    testConnection(): Promise<{ success: boolean; email?: string; imapOk?: boolean; error?: string }>
   }
   templates: {
     list(): Promise<Template[]>

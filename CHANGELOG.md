@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.5.1 (2026-07-04)
+
+### Features
+- **Connection diagnostics**: Dashboard shows real-time Token and IMAP connection status with green/red indicators
+- Auto-diagnoses on dashboard load — if token expired, auto-triggers re-login
+- "Test Connection" button for manual diagnostics at any time
+- Shows specific error messages when token or IMAP fails
+
 ## v1.5.0 (2026-07-04)
 
 ### Features

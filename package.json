@@ -1,6 +1,6 @@
 {
   "name": "outlook-auto",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Outlook batch email automation desktop app",
   "main": "./out/main/index.js",
   "scripts": {

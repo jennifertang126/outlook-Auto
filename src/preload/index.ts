@@ -4,7 +4,9 @@ const electronAPI = {
   auth: {
     getStatus: () => ipcRenderer.invoke('auth:getStatus'),
     login: () => ipcRenderer.invoke('auth:login'),
-    logout: () => ipcRenderer.invoke('auth:logout')
+    logout: () => ipcRenderer.invoke('auth:logout'),
+    refreshToken: () => ipcRenderer.invoke('auth:refreshToken'),
+    testConnection: () => ipcRenderer.invoke('auth:testConnection')
   },
   templates: {
     list: () => ipcRenderer.invoke('templates:list'),

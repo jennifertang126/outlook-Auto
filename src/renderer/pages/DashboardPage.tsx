@@ -6,24 +6,63 @@ import {
   Mail,
   History,
   Send,
-  ArrowRight
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
+  Wifi
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../App'
 import { api } from '../lib/electron-api'
+import { useToast } from '../components/ui/use-toast'
 import type { Job, Template } from '../lib/types'
+
+interface DiagResult {
+  token: 'ok' | 'fail' | 'pending' | 'idle'
+  imap: 'ok' | 'fail' | 'pending' | 'idle'
+  tokenError?: string
+  imapError?: string
+}
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { auth } = useAuth()
+  const { auth, refreshAuth } = useAuth()
+  const { toast } = useToast()
   const [jobs, setJobs] = useState<Job[]>([])
   const [templates, setTemplates] = useState<Template[]>([])
+  const [diag, setDiag] = useState<DiagResult>({ token: 'idle', imap: 'idle' })
+
+  const runDiagnostic = async () => {
+    setDiag({ token: 'pending', imap: 'idle' })
+
+    // Step 1: Test token refresh
+    const tokenResult = await api.auth.refreshToken()
+    if (!tokenResult.success) {
+      setDiag({ token: 'fail', imap: 'idle', tokenError: tokenResult.error })
+      return
+    }
+    setDiag({ token: 'ok', imap: 'pending' })
+    await refreshAuth()
+
+    // Step 2: Test IMAP connection
+    const imapResult = await api.auth.testConnection()
+    if (!imapResult.success) {
+      setDiag({ token: 'ok', imap: 'fail', imapError: imapResult.error })
+      return
+    }
+    setDiag({ token: 'ok', imap: 'ok' })
+    toast({ title: 'All systems working!' })
+  }
 
   useEffect(() => {
     api.jobs.list().then(setJobs)
     api.templates.list().then(setTemplates)
+    // Auto-diagnose on dashboard load
+    runDiagnostic()
   }, [])
 
   const recentJobs = jobs.slice(0, 5)
@@ -34,6 +73,13 @@ export function DashboardPage() {
     ['draft_creating', 'drafts_ready', 'sending'].includes(j.status)
   )
 
+  const StatusIcon = ({ status }: { status: string }) => {
+    if (status === 'ok') return <CheckCircle2 className="h-4 w-4 text-green-500" />
+    if (status === 'fail') return <XCircle className="h-4 w-4 text-red-500" />
+    if (status === 'pending') return <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+    return <div className="h-4 w-4 rounded-full bg-muted" />
+  }
+
   return (
     <div>
       <div className="mb-8">
@@ -42,6 +88,43 @@ export function DashboardPage() {
         </h2>
         <p className="text-sm text-muted-foreground mt-1">{auth.userEmail}</p>
       </div>
+
+      {/* Quick Actions */}
+      {/* Connection Status */}
+      <Card className="mb-6">
+        <CardContent className="py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Wifi className="h-5 w-5 text-muted-foreground" />
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 text-sm">
+                  <StatusIcon status={diag.token} />
+                  <span className="text-muted-foreground">Token</span>
+                  {diag.token === 'fail' && (
+                    <span className="text-xs text-red-500">{diag.tokenError}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <StatusIcon status={diag.imap} />
+                  <span className="text-muted-foreground">IMAP</span>
+                  {diag.imap === 'fail' && (
+                    <span className="text-xs text-red-500">{diag.imapError}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={runDiagnostic}
+              disabled={diag.token === 'pending' || diag.imap === 'pending'}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1 ${diag.token === 'pending' || diag.imap === 'pending' ? 'animate-spin' : ''}`} />
+              Test Connection
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-4 mb-8">

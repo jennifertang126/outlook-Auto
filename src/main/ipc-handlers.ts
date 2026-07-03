@@ -18,6 +18,29 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('auth:getStatus', () => authService.getStatus())
   ipcMain.handle('auth:login', () => authService.login())
   ipcMain.handle('auth:logout', () => authService.logout())
+  ipcMain.handle('auth:refreshToken', async () => {
+    try {
+      const token = await authService.getAccessToken()
+      return { success: true, email: authService.getUserEmail(), tokenLength: token.length }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
+
+  // Diagnostic — test IMAP connection
+  ipcMain.handle('auth:testConnection', async () => {
+    try {
+      const token = await authService.getAccessToken()
+      const email = authService.getUserEmail()
+      graphService.setAccessToken(token)
+      graphService.setUserEmail(email)
+      // Try a lightweight IMAP operation
+      const sent = await graphService.checkSentEmails(['__test__@__nonexistent__.com'])
+      return { success: true, email, imapOk: true }
+    } catch (err: any) {
+      return { success: false, error: err.message }
+    }
+  })
 
   // Templates
   ipcMain.handle('templates:list', () => templateService.list())
