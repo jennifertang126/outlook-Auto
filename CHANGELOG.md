@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.4.1 (2026-07-04)
+
+### Bug Fixes
+- Fixed "Dedup check failed" and draft creation failure after days of inactivity — token refresh now auto-triggers re-login when refresh token expires
+- Fixed preview step showing all recipients including excluded ones — now only shows active (checked) recipients
+- Preview navigation count matches active recipient count
+
+### Improvements
+- Auto re-login: when token expires (even after weeks), the app automatically pops up the Microsoft login window instead of failing silently
+- No need to manually logout and re-login — just use the app normally
+
 ## v1.4.0 (2026-07-02)
 
 ### Features

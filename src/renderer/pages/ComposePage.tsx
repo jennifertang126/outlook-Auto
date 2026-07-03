@@ -67,7 +67,8 @@ export function ComposePage() {
   // Auto-preview when navigating to preview step
   useEffect(() => {
     if (step === 2 && selectedTemplateId) {
-      if (excelData && excelData.rows.length > 0) {
+      const active = getActiveRecipients()
+      if (active.length > 0) {
         setPreviewIndex(0)
         loadPreview(0)
       }
@@ -122,10 +123,11 @@ export function ComposePage() {
   }
 
   const loadPreview = async (index: number) => {
-    if (!selectedTemplateId || !excelData) return
-    if (index >= excelData.rows.length) return
+    if (!selectedTemplateId) return
+    const active = getActiveRecipients()
+    if (index >= active.length) return
     try {
-      const result = await api.templates.preview(selectedTemplateId, excelData.rows[index])
+      const result = await api.templates.preview(selectedTemplateId, active[index])
       setPreviewResult(result)
     } catch (err: any) {
       toast({ title: 'Preview failed', description: err.message, variant: 'destructive' })
@@ -133,8 +135,9 @@ export function ComposePage() {
   }
 
   const handlePreviewNav = (dir: number) => {
-    if (!excelData || excelData.rows.length === 0) return
-    const newIndex = Math.max(0, Math.min(excelData.rows.length - 1, previewIndex + dir))
+    const active = getActiveRecipients()
+    if (active.length === 0) return
+    const newIndex = Math.max(0, Math.min(active.length - 1, previewIndex + dir))
     setPreviewIndex(newIndex)
     loadPreview(newIndex)
   }
@@ -449,7 +452,7 @@ export function ComposePage() {
                   </CardDescription>
                 </div>
                 {(() => {
-                  const active = excelData?.rows || []
+                  const active = getActiveRecipients()
                   return active.length > 0 ? (
                     <div className="flex items-center gap-2">
                       <Button
@@ -484,8 +487,8 @@ export function ComposePage() {
                   <div>
                     <Label className="text-xs text-muted-foreground">To</Label>
                     <p className="text-sm mt-1">
-                      {excelData?.rows[previewIndex]?.name || ''}{' '}
-                      &lt;{excelData?.rows[previewIndex]?.email || ''}&gt;
+                      {getActiveRecipients()[previewIndex]?.name || ''}{' '}
+                      &lt;{getActiveRecipients()[previewIndex]?.email || ''}&gt;
                     </p>
                   </div>
                   <Separator />

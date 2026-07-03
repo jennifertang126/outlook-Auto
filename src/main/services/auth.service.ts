@@ -209,9 +209,20 @@ export class AuthService {
 
   async getAccessToken(): Promise<string> {
     this.ensureLoaded()
-    if (!this.tokenData) throw new Error('Not authenticated')
+    if (!this.tokenData) {
+      // No token at all — need full login
+      await this.login()
+      if (!this.tokenData) throw new Error('Not authenticated')
+      return this.tokenData.access_token
+    }
     if (this.isTokenExpired()) {
-      await this.refreshAccessToken()
+      try {
+        await this.refreshAccessToken()
+      } catch {
+        // Refresh failed — auto re-login
+        await this.login()
+        if (!this.tokenData) throw new Error('Not authenticated')
+      }
     }
     return this.tokenData.access_token
   }
