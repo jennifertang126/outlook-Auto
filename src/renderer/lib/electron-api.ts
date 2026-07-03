@@ -36,6 +36,7 @@ interface ElectronAPI {
     sendAll(id: number): Promise<void>
     sendOne(jobId: number, recordId: number): Promise<void>
     cancel(id: number): Promise<void>
+    delete(id: number): Promise<void>
   }
   attachments: {
     openFileDialog(): Promise<string[] | null>

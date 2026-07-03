@@ -61,6 +61,7 @@ export function registerIpcHandlers(): void {
     jobService.sendOne(jobId, recordId)
   )
   ipcMain.handle('jobs:cancel', (_e, id: number) => jobService.cancel(id))
+  ipcMain.handle('jobs:delete', (_e, id: number) => jobService.deleteJob(id))
 
   // Attachments
   ipcMain.handle('attachments:openFileDialog', async () => {

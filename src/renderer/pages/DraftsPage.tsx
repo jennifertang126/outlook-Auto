@@ -9,7 +9,8 @@ import {
   FileText,
   ArrowLeft,
   RefreshCw,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card'
@@ -88,6 +89,15 @@ export function DraftsPage() {
     if (selectedJobId) await loadDetail(selectedJobId)
   }
 
+  const handleDelete = async (id: number) => {
+    await api.jobs.delete(id)
+    toast({ title: 'Job deleted' })
+    if (selectedJobId === id) {
+      navigate('/drafts')
+    }
+    await loadJobs()
+  }
+
   const activeJobs = jobs.filter((j) =>
     ['draft_creating', 'drafts_ready', 'sending'].includes(j.status)
   )
@@ -118,6 +128,14 @@ export function DraftsPage() {
             <Badge variant={config?.color}>{config?.label}</Badge>
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => handleDelete(detail.id)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -304,7 +322,20 @@ export function DraftsPage() {
                         {new Date(job.created_at).toLocaleString()}
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete(job.id)
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

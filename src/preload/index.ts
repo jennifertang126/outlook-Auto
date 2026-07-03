@@ -26,7 +26,8 @@ const electronAPI = {
     sendAll: (id: number) => ipcRenderer.invoke('jobs:sendAll', id),
     sendOne: (jobId: number, recordId: number) =>
       ipcRenderer.invoke('jobs:sendOne', jobId, recordId),
-    cancel: (id: number) => ipcRenderer.invoke('jobs:cancel', id)
+    cancel: (id: number) => ipcRenderer.invoke('jobs:cancel', id),
+    delete: (id: number) => ipcRenderer.invoke('jobs:delete', id)
   },
   attachments: {
     openFileDialog: () => ipcRenderer.invoke('attachments:openFileDialog')

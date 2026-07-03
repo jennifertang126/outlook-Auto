@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.5.0 (2026-07-04)
+
+### Features
+- Delete button on each job in Drafts list and History list (trash icon, click to remove)
+- Delete button in job detail view header
+- Deleting a job removes all associated records and attachments from database
+
 ## v1.4.1 (2026-07-04)
 
 ### Bug Fixes

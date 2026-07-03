@@ -310,6 +310,13 @@ export class JobService {
     }
   }
 
+  deleteJob(jobId: number): void {
+    const db = getDb()
+    db.prepare('DELETE FROM attachment WHERE job_id = ?').run(jobId)
+    db.prepare('DELETE FROM send_record WHERE job_id = ?').run(jobId)
+    db.prepare('DELETE FROM send_job WHERE id = ?').run(jobId)
+  }
+
   async cancel(jobId: number): Promise<void> {
     getDb().prepare("UPDATE send_job SET status = 'failed' WHERE id = ?").run(jobId)
     getDb()

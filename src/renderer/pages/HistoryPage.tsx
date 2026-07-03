@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, XCircle, History } from 'lucide-react'
+import { CheckCircle2, XCircle, History, Trash2 } from 'lucide-react'
 import { Card, CardContent } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Button } from '../components/ui/button'
@@ -18,6 +18,12 @@ export function HistoryPage() {
   useEffect(() => {
     loadJobs()
   }, [])
+
+  const handleDelete = async (id: number) => {
+    await api.jobs.delete(id)
+    toast({ title: 'Job deleted' })
+    await loadJobs()
+  }
 
   const completedJobs = jobs.filter((j) => ['completed', 'failed'].includes(j.status))
 
@@ -82,6 +88,17 @@ export function HistoryPage() {
                           : new Date(job.created_at).toLocaleString()}
                       </p>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(job.id)
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
