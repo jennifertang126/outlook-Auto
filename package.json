@@ -1,8 +1,28 @@
 {
   "name": "outlook-auto",
   "version": "1.5.1",
-  "description": "Outlook batch email automation desktop app",
+  "description": "Batch personalized email automation for Outlook — Excel-driven templates, IMAP drafts, and web-automated sending, in a native desktop app",
   "main": "./out/main/index.js",
+  "license": "MIT",
+  "author": "jennifertang126",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jennifertang126/outlook-Auto.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jennifertang126/outlook-Auto/issues"
+  },
+  "homepage": "https://github.com/jennifertang126/outlook-Auto#readme",
+  "keywords": [
+    "outlook",
+    "email-automation",
+    "mail-merge",
+    "batch-email",
+    "electron",
+    "imap",
+    "oauth2",
+    "desktop-app"
+  ],
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
