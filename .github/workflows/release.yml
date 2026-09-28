@@ -28,7 +28,18 @@ jobs:
         run: npm ci
 
       - name: Build & package DMG
-        run: npm run build:mac
+        run: |
+          set -o pipefail
+          {
+            npm run build
+            npx electron-builder --mac --publish never
+          } 2>&1 | tee /tmp/build.log || {
+            tail -10 /tmp/build.log | tr -d '\r' \
+              | sed 's/%/%25/g' | while IFS= read -r line; do
+              echo "::error::${line}"
+            done
+            exit 1
+          }
 
       - name: Upload DMG to release
         uses: softprops/action-gh-release@v2
