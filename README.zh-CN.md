@@ -194,8 +194,22 @@ erDiagram
 
 ## 📸 截图
 
-> 待补充 —— 可在此处添加编写向导、去重表格、草稿页面和 Outlook 网页
-> 发送窗口的截图。（下方 DMG 开箱即用，欢迎自行体验。）
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="微软账号登录 —— 零 Azure 配置" /></td>
+    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="仪表盘：实时 Token/IMAP 连接诊断" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/compose-upload.png" alt="收件人表格：Sent-before 去重徽章" /></td>
+    <td width="50%"><img src="docs/screenshots/compose-preview.png" alt="逐收件人模板预览" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/job-detail.png" alt="任务详情：逐收件人状态" /></td>
+    <td width="50%"><img src="docs/screenshots/template-editor.png" alt="富文本模板编辑器" /></td>
+  </tr>
+</table>
+
+完整截图见 [docs/screenshots](docs/screenshots/) —— 编写向导的每一步（上传 → 模板 → 预览 → 附件 → 确认）、草稿页、模板页与历史页。
 
 ## 🚀 快速开始
 

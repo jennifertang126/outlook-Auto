@@ -202,9 +202,24 @@ erDiagram
 
 ## 📸 Screenshots
 
-> TODO — add screenshots of the Compose wizard, dedup table, drafts page and
-> the Outlook Web send window here. (The DMG below works immediately if you
-> want to take your own.)
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/login.png" alt="Sign in with Microsoft — zero Azure setup" /></td>
+    <td width="50%"><img src="docs/screenshots/dashboard.png" alt="Dashboard with live Token/IMAP diagnostics" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/compose-upload.png" alt="Recipient table with Sent-before dedup badges" /></td>
+    <td width="50%"><img src="docs/screenshots/compose-preview.png" alt="Per-recipient template preview" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/job-detail.png" alt="Job detail with per-recipient statuses" /></td>
+    <td width="50%"><img src="docs/screenshots/template-editor.png" alt="Rich text template editor" /></td>
+  </tr>
+</table>
+
+Full walkthrough in [docs/screenshots](docs/screenshots/) — every step of the
+Compose wizard (Upload → Template → Preview → Attachments → Confirm), the
+Drafts list, Templates and History pages.
 
 ## 🚀 Getting started
 
