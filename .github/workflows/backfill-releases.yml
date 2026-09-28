@@ -1,0 +1,120 @@
+name: Backfill Releases
+
+on:
+  push:
+    tags:
+      - 'backfill-*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  historical:
+    name: Release ${{ matrix.tag }}
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        tag:
+          [
+            v1.0.0,
+            v1.1.0,
+            v1.2.0,
+            v1.2.1,
+            v1.2.2,
+            v1.3.0,
+            v1.3.1,
+            v1.3.2,
+            v1.4.0,
+            v1.4.1,
+            v1.5.0
+          ]
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.tag }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package DMG
+        run: npm run build:mac
+
+      - name: Extract release notes
+        run: |
+          awk -v header="## ${{ matrix.tag }} (" '
+            index($0, header) == 1 { in_section=1; next }
+            /^## v[0-9]/ { in_section=0 }
+            in_section { print }
+          ' CHANGELOG.md > /tmp/notes.md
+          if [ ! -s /tmp/notes.md ]; then
+            echo "See CHANGELOG.md for details." > /tmp/notes.md
+          fi
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ matrix.tag }}" >/dev/null 2>&1; then
+            echo "Release already exists, uploading assets"
+            gh release upload "${{ matrix.tag }}" dist/*.dmg --clobber
+          else
+            gh release create "${{ matrix.tag }}" dist/*.dmg \
+              --title "Outlook-Auto ${{ matrix.tag }}" \
+              --notes-file /tmp/notes.md
+          fi
+
+  latest:
+    name: Release v1.5.1 (latest)
+    runs-on: macos-14
+    needs: historical
+    if: ${{ always() }}
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: v1.5.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build & package DMG
+        run: npm run build:mac
+
+      - name: Extract release notes
+        run: |
+          awk -v header="## v1.5.1 (" '
+            index($0, header) == 1 { in_section=1; next }
+            /^## v[0-9]/ { in_section=0 }
+            in_section { print }
+          ' CHANGELOG.md > /tmp/notes.md
+          if [ ! -s /tmp/notes.md ]; then
+            echo "See CHANGELOG.md for details." > /tmp/notes.md
+          fi
+
+      - name: Create GitHub release (mark latest)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.5.1 >/dev/null 2>&1; then
+            gh release upload v1.5.1 dist/*.dmg --clobber
+          else
+            gh release create v1.5.1 dist/*.dmg \
+              --title "Outlook-Auto v1.5.1" \
+              --notes-file /tmp/notes.md \
+              --latest
+          fi
